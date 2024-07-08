@@ -29,24 +29,46 @@ def generate_bot_responses(message, session):
 
 
 def record_current_answer(answer, current_question_id, session):
-    '''
-    Validates and stores the answer for the current question to django session.
-    '''
-    return True, ""
+    ry:
+        if current_question_id is not None:
+            answers = session.get("answers", {})
+            answers[current_question_id] = answer
+            session["answers"] = answers
+            return True, ""
+        return False, "Invalid question ID."
+    except Exception as e:
+        return False, str(e)
+    
 
 
 def get_next_question(current_question_id):
-    '''
-    Fetches the next question from the PYTHON_QUESTION_LIST based on the current_question_id.
-    '''
+    try:
+        current_index = None
+        for index, question in enumerate(PYTHON_QUESTION_LIST):
+            if question["id"] == current_question_id:
+                current_index = index
+                break
 
-    return "dummy question", -1
+        if current_index is not None and current_index + 1 < len(PYTHON_QUESTION_LIST):
+            next_question = PYTHON_QUESTION_LIST[current_index + 1]
+            return next_question["question"], next_question["id"]
+        return None, None
+    except Exception as e:
+        return None, None
 
 
 def generate_final_response(session):
-    '''
-    Creates a final result message including a score based on the answers
-    by the user for questions in the PYTHON_QUESTION_LIST.
-    '''
+    answers = session.get("answers", {})
+    score = 0
+    total_questions = len(PYTHON_QUESTION_LIST)
 
-    return "dummy result"
+    for question in PYTHON_QUESTION_LIST:
+        qid = question["id"]
+        correct_answer = question.get("correct_answer")
+        user_answer = answers.get(qid)
+
+        if user_answer and user_answer.lower() == correct_answer.lower():
+            score += 1
+
+    result_message = f"You've completed the quiz! Your score is {score}/{total_questions}."
+    return result_message
